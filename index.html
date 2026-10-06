@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halden Tint Studio</title>
+<meta name="description" content="Ceramic window film, fitted by hand. Lifetime warranty on every window.">
+<!-- Fonts: swap to self-hosted @font-face before production -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
+<style>
+/* Tokens. One accent (ice), one neutral family (cold graphite). Radius rule: pills for interactive, 20px for surfaces, 12px for inputs. */
+:root{
+  --bg:#0b0d10; --bg-2:#111418; --bg-3:#171b21;
+  --line:rgba(226,232,240,.10); --line-2:rgba(226,232,240,.18);
+  --text:#e8ecf1; --muted:#98a2b0; --faint:#6b7480;
+  --accent:#8fd0f2; --on-accent:#06141c;
+  --scrim:rgba(11,13,16,.55);
+  --r-surface:20px; --r-input:12px;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --shadow:0 30px 60px -30px rgba(2,8,14,.7);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f1f3f6; --bg-2:#e8ebef; --bg-3:#dde1e7;
+    --line:rgba(16,22,30,.12); --line-2:rgba(16,22,30,.22);
+    --text:#12171d; --muted:#4a5562; --faint:#5f6a77;
+    --accent:#0b6e9e; --on-accent:#f4fbff;
+    --scrim:rgba(241,243,246,.6);
+    --shadow:0 30px 60px -30px rgba(20,30,45,.35);
+  }
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:'Geist',system-ui,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+.wrap{max-width:1360px;margin:0 auto;padding:0 clamp(16px,4vw,48px)}
+h1,h2,h3{font-weight:600;letter-spacing:-.035em;line-height:1.02}
+h2{font-size:clamp(2rem,4.4vw,3.75rem);max-width:16ch}
+p{color:var(--muted);max-width:58ch}
+.eyebrow{font-family:'Geist Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:20px;display:block}
+section{padding:clamp(80px,11vw,160px) 0}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;height:52px;padding:0 26px;border-radius:999px;font-weight:500;font-size:15px;border:1px solid transparent;cursor:pointer;transition:transform .35s var(--ease),background .25s,border-color .25s;will-change:transform}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-ghost{border-color:var(--line-2);color:var(--text);background:transparent}
+.btn-ghost:hover{border-color:var(--text)}
+.btn i{font-size:18px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
+
+/* Nav */
+nav{position:fixed;inset:0 0 auto 0;z-index:100;height:68px;display:flex;align-items:center;background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;width:100%}
+.logo{font-weight:600;letter-spacing:-.02em;font-size:18px;display:flex;align-items:center;gap:10px}
+.logo-mark{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--accent),transparent 70%);border:1px solid var(--line-2)}
+.nav-links{display:flex;gap:34px;font-size:14px;color:var(--muted)}
+.nav-links a:hover{color:var(--text)}
+nav .btn{height:42px;padding:0 20px;font-size:14px}
+@media(max-width:820px){.nav-links{display:none}}
+
+/* Hero */
+/* Continuous film: one sticky stage holds all three clips. Scroll drives one master timeline (see script). */
+.film{position:relative;height:1000vh}
+.stage{position:sticky;top:0;height:100dvh;overflow:hidden;background:#05080c;color:#eef2f6}
+.vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;will-change:opacity}
+.vid[data-scrub="hero"]{opacity:1}
+.scrim{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(5,8,12,.88),rgba(5,8,12,.45) 48%,transparent 78%),linear-gradient(0deg,rgba(5,8,12,.55),transparent 38%),linear-gradient(180deg,rgba(5,8,12,.5),transparent 22%)}
+.layer{position:absolute;inset:0;display:flex;align-items:center;padding-top:68px;opacity:0;pointer-events:none}
+.layer .wrap{width:100%}
+.layer .in-col{max-width:min(620px,92vw)}
+#lHero{opacity:1}
+.film h1{font-size:clamp(2.5rem,4.6vw,4.4rem);margin-bottom:28px;text-wrap:balance;color:#eef2f6}
+.film h1 em{font-style:italic;font-weight:500;color:var(--accent);padding-bottom:.06em;display:inline-block;line-height:1.1}
+.film h2{color:#eef2f6;margin-bottom:28px;max-width:14ch}
+.film p{color:#c6cfda}
+.film .btn-primary{color:var(--on-accent)}
+.film .btn-ghost{color:#eef2f6;border-color:rgba(238,242,246,.4)}
+.film .btn-ghost:hover{border-color:#eef2f6}
+.hero-sub{font-size:18px;margin-bottom:40px;max-width:42ch}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap}
+.cap-stack{display:grid}
+.cap-stack>p{grid-area:1/1;font-size:18px;max-width:40ch;opacity:0;transform:translateY(12px);transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.cap-stack>p.on{opacity:1;transform:none}
+.cap-stack b{color:#eef2f6;font-weight:500}
+.steps{display:grid;gap:10px;list-style:none;padding:0;margin-top:8px}
+.step{opacity:.35;transition:opacity .5s var(--ease)}
+.step.on{opacity:1}
+.step h3{font-size:clamp(1.5rem,2.4vw,2.1rem);color:#eef2f6}
+.step .sp{display:grid;grid-template-rows:0fr;transition:grid-template-rows .5s var(--ease)}
+.step.on .sp{grid-template-rows:1fr}
+.step .sp p{overflow:hidden;font-size:16px;max-width:44ch;padding-top:0}
+.step.on .sp p{padding-top:6px}
+@media(max-width:900px){
+  .film{height:820vh}
+  .scrim{background:linear-gradient(0deg,rgba(5,8,12,.94),rgba(5,8,12,.55) 45%,transparent 75%),linear-gradient(180deg,rgba(5,8,12,.5),transparent 20%)}
+  .layer{align-items:flex-end;padding:0 0 clamp(28px,6vh,56px)}
+  .film h1{font-size:2.15rem;margin-bottom:14px}
+  .hero-sub{font-size:16px;margin-bottom:22px}
+  .film h2{font-size:2rem;margin-bottom:16px}
+  .cap-stack>p{font-size:16px}
+  .hero-cta .btn{height:48px;padding:0 20px}
+}
+
+/* Logo wall */
+.logos{padding:0 0 clamp(56px,7vw,96px)}
+.logos-head{color:var(--faint);font-size:14px;margin-bottom:28px}
+.logos-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:24px;align-items:center;border-top:1px solid var(--line);padding-top:36px}
+.logos-row img{height:28px;width:auto;margin:0 auto;opacity:.6;filter:grayscale(1);transition:opacity .3s}
+.logos-row img:hover{opacity:1}
+@media(prefers-color-scheme: light){:root:not([data-theme="dark"]) .logos-row img{filter:grayscale(1) invert(1)}}
+@media(max-width:700px){.logos-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* VLT slider */
+.vlt{background:var(--bg-2);border-block:1px solid var(--line)}
+.vlt-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,5vw,88px);align-items:center}
+.vlt h2{margin-bottom:24px}
+.vlt-stage{position:relative;border-radius:var(--r-surface);overflow:hidden;aspect-ratio:16/11;border:1px solid var(--line);box-shadow:var(--shadow)}
+.vlt-media{width:100%;height:100%;object-fit:cover;display:block}
+.vlt-tint{position:absolute;inset:0;background:#02060a;opacity:.4;transition:opacity .2s linear;mix-blend-mode:multiply}
+.vlt-ctrl{margin-top:28px}
+.vlt-readout{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+.vlt-readout b{font-size:3.25rem;font-weight:500;letter-spacing:-.04em;line-height:1}
+.vlt-readout span{color:var(--muted);font-size:14px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:99px;background:var(--line-2);outline-offset:8px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:4px solid var(--bg-2);box-shadow:0 0 0 1px var(--accent);cursor:grab}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent);border:4px solid var(--bg-2);cursor:grab}
+.vlt-scale{display:flex;justify-content:space-between;color:var(--faint);font-size:12px;margin-top:12px}
+@media(max-width:900px){.vlt-grid{grid-template-columns:1fr}}
+
+/* Bento */
+.bento-head{margin-bottom:56px}
+.bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:minmax(260px,auto);gap:16px}
+.cell{position:relative;border-radius:var(--r-surface);overflow:hidden;padding:32px;display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--line);isolation:isolate;transition:transform .5s var(--ease)}
+.cell:hover{transform:translateY(-4px)}
+.cell h3{font-size:1.6rem;margin-bottom:10px}
+.cell p{font-size:15px}
+.cell .ico{position:absolute;top:28px;left:32px;font-size:26px;color:var(--accent)}
+.cell>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transition:transform 1.2s var(--ease)}
+.cell:hover>img{transform:scale(1.05)}
+.cell.img::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(6,9,13,.15),rgba(6,9,13,.9))}
+.cell.img h3,.cell.img p{color:#eef2f6}
+.cell.img p{color:#c6cfda}
+.c-a{grid-column:span 4;grid-row:span 2}
+.c-b{grid-column:span 2;background:radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,var(--accent) 28%,transparent),transparent 60%),var(--bg-3)}
+.c-c{grid-column:span 2;background:repeating-linear-gradient(135deg,transparent 0 14px,var(--line) 14px 15px),var(--bg-2)}
+.c-d{grid-column:span 3;background:var(--accent);color:var(--on-accent);border-color:transparent}
+.c-d p,.c-d h3,.c-d .ico{color:var(--on-accent)}
+.c-e{grid-column:span 3}
+@media(max-width:900px){
+  .bento{grid-template-columns:1fr;grid-auto-rows:minmax(240px,auto)}
+  .c-a,.c-b,.c-c,.c-d,.c-e{grid-column:auto;grid-row:auto}
+  .c-a{min-height:380px}
+}
+
+/* Tiers */
+.tiers{background:var(--bg-2);border-block:1px solid var(--line)}
+.tiers h2{margin-bottom:56px}
+.tier-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:16px}
+.tier{border-radius:var(--r-surface);padding:clamp(28px,3.5vw,48px);border:1px solid var(--line);background:var(--bg);display:flex;flex-direction:column;justify-content:space-between;gap:28px}
+.tier.feat{grid-row:span 2;background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 16%,var(--bg)),var(--bg) 60%);border-color:var(--line-2)}
+.tier h3{font-size:clamp(1.6rem,2.6vw,2.4rem);margin-bottom:12px}
+.price{font-size:clamp(2.5rem,5vw,4.5rem);font-weight:500;letter-spacing:-.045em;line-height:1}
+.price small{font-size:14px;color:var(--muted);letter-spacing:0;font-weight:400;margin-left:8px}
+.tier ul{list-style:none;padding:0;display:grid;gap:12px;margin-top:8px}
+.tier li{display:flex;gap:12px;align-items:flex-start;color:var(--muted);font-size:15px}
+.tier li i{color:var(--accent);font-size:18px;margin-top:3px;flex:none}
+@media(max-width:900px){.tier-grid{grid-template-columns:1fr}.tier.feat{grid-row:auto}}
+
+/* Quote */
+.quote{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:clamp(32px,5vw,80px);align-items:center}
+.quote-img{border-radius:var(--r-surface);overflow:hidden;aspect-ratio:4/5;border:1px solid var(--line)}
+.quote-img img{width:100%;height:100%;object-fit:cover}
+blockquote{font-size:clamp(1.6rem,3.2vw,2.8rem);font-weight:500;letter-spacing:-.03em;line-height:1.15;color:var(--text);max-width:24ch}
+.who{margin-top:32px;color:var(--muted);font-size:15px}
+.who b{color:var(--text);font-weight:500;display:block}
+@media(max-width:900px){.quote{grid-template-columns:1fr}.quote-img{aspect-ratio:16/10}}
+
+/* FAQ */
+.faq{background:var(--bg-2);border-block:1px solid var(--line)}
+.faq-grid{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:clamp(32px,6vw,100px)}
+details{border-top:1px solid var(--line);padding:26px 0}
+details:last-child{border-bottom:1px solid var(--line)}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:20px;font-size:1.2rem;font-weight:500;letter-spacing:-.02em}
+summary::-webkit-details-marker{display:none}
+summary i{transition:transform .4s var(--ease);color:var(--accent);flex:none}
+details[open] summary i{transform:rotate(45deg)}
+details p{margin-top:14px;font-size:16px}
+@media(max-width:900px){.faq-grid{grid-template-columns:1fr}}
+
+/* Booking */
+.book-grid{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,6fr);gap:clamp(32px,6vw,100px)}
+.book h2{margin-bottom:24px}
+form{display:grid;gap:20px;background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-surface);padding:clamp(24px,3vw,40px)}
+label{display:grid;gap:8px;font-size:14px;color:var(--text);font-weight:500}
+input,select{height:52px;border-radius:var(--r-input);border:1px solid var(--line-2);background:var(--bg);color:var(--text);padding:0 16px;font:inherit;font-size:15px}
+input::placeholder{color:var(--muted)}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.help{font-size:13px;color:var(--muted);font-weight:400}
+.err{font-size:13px;color:#ff9d8f;display:none;font-weight:400}
+@media(prefers-color-scheme: light){:root:not([data-theme="dark"]) .err{color:#b1321f}}
+.invalid .err{display:block}
+.invalid input{border-color:#ff9d8f}
+.done{display:none;align-items:center;gap:12px;color:var(--text)}
+.done i{color:var(--accent);font-size:24px}
+form.sent .done{display:flex}
+form.sent label,form.sent .row,form.sent button{display:none}
+@media(max-width:900px){.book-grid{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
+
+/* Footer */
+footer{border-top:1px solid var(--line);padding:56px 0 40px}
+.foot{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,3fr) minmax(0,3fr);gap:40px}
+.foot p,.foot a{font-size:14px;color:var(--muted)}
+.foot a:hover{color:var(--text)}
+.foot ul{list-style:none;padding:0;display:grid;gap:10px}
+.foot h4{font-size:14px;font-weight:500;margin-bottom:14px}
+.legal{margin-top:48px;padding-top:24px;border-top:1px solid var(--line);font-size:13px;color:var(--faint)}
+@media(max-width:700px){.foot{grid-template-columns:1fr}}
+
+/* Motion: only transform/opacity, gated by reduced-motion */
+@media(prefers-reduced-motion:no-preference){
+  .rv{opacity:0;transform:translateY(28px);transition:opacity .9s var(--ease),transform .9s var(--ease);transition-delay:var(--d,0s)}
+  .rv.in{opacity:1;transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .film{height:auto}
+  .stage{position:relative;height:auto;min-height:100dvh;background:#05080c url(media/hero.jpg) center/cover}
+  .vid{display:none}
+  .layer{position:relative;inset:auto;opacity:1!important;pointer-events:auto;padding:80px 0}
+  .step{opacity:1}
+  .step .sp{grid-template-rows:1fr}
+  .cap-stack>p{opacity:1;transform:none;grid-area:auto;margin-bottom:12px}
+  .cell,.cell>img,.btn{transition:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a href="#top" class="logo"><span class="logo-mark" aria-hidden="true"></span>Halden Tint</a>
+    <div class="nav-links">
+      <a href="#shade">Shade preview</a>
+      <a href="#services">Services</a>
+      <a href="#films">Films</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a href="#book" class="btn btn-primary magnet">Book a fitting</a>
+  </div>
+</nav>
+
+<main class="film" id="film">
+  <div class="stage">
+    <video class="vid" data-scrub="hero" muted playsinline preload="auto" poster="media/hero.jpg" aria-hidden="true"><source src="media/hero.mp4" type="video/mp4"></video>
+    <video class="vid" data-scrub="heat" muted playsinline preload="auto" aria-hidden="true"><source src="media/heat.mp4" type="video/mp4"></video>
+    <video class="vid" data-scrub="craft" muted playsinline preload="auto" aria-hidden="true"><source src="media/craft.mp4" type="video/mp4"></video>
+    <div class="scrim"></div>
+
+    <div class="layer" id="lHero"><div class="wrap"><div class="in-col">
+      <h1>Tint that looks factory, and <em>stays</em> that way.</h1>
+      <p class="hero-sub">Ceramic film, cut to fit and installed by hand. Lifetime warranty on every window we do.</p>
+      <div class="hero-cta">
+        <a href="#book" class="btn btn-primary magnet">Book a fitting <i class="ph ph-arrow-up-right"></i></a>
+        <a href="#shade" class="btn btn-ghost">Compare shades</a>
+      </div>
+    </div></div></div>
+
+    <div class="layer" id="lHeat"><div class="wrap"><div class="in-col">
+      <h2>Heat stays outside.</h2>
+      <div class="cap-stack">
+        <p class="on" data-cap="0"><b>Bare glass.</b> Infrared heat passes straight into the cabin and soaks the seats.</p>
+        <p data-cap="1"><b>IR Ceramic film.</b> Blocks up to 98% of that heat at the window.</p>
+      </div>
+    </div></div></div>
+
+    <div class="layer" id="lCraft"><div class="wrap"><div class="in-col">
+      <h2>Done right takes four hours.</h2>
+      <ol class="steps" id="steps">
+        <li class="step on"><h3>Cut</h3><div class="sp"><p>Each piece is cut from the factory glass profile, so edges sit flush with no overhang.</p></div></li>
+        <li class="step"><h3>Place</h3><div class="sp"><p>The film goes onto wet glass in a sealed, filtered bay, so no dust gets under it.</p></div></li>
+        <li class="step"><h3>Squeegee</h3><div class="sp"><p>Water is pushed out edge to edge in one clean pass, by hand.</p></div></li>
+        <li class="step"><h3>Cure</h3><div class="sp"><p>You drive away the same day. Keep the windows up for three days while the film settles.</p></div></li>
+      </ol>
+    </div></div></div>
+  </div>
+</main>
+
+<div class="logos">
+  <div class="wrap">
+    <p class="logos-head rv">Trusted by owners of</p>
+    <div class="logos-row rv">
+      <img src="https://cdn.simpleicons.org/porsche/ffffff" alt="Porsche" height="28">
+      <img src="https://cdn.simpleicons.org/tesla/ffffff" alt="Tesla" height="28">
+      <img src="https://cdn.simpleicons.org/bmw/ffffff" alt="BMW" height="28">
+      <img src="https://cdn.simpleicons.org/audi/ffffff" alt="Audi" height="28">
+      <img src="https://cdn.simpleicons.org/mercedes/ffffff" alt="Mercedes-Benz" height="28">
+      <img src="https://cdn.simpleicons.org/landrover/ffffff" alt="Land Rover" height="28">
+    </div>
+  </div>
+</div>
+
+
+
+<section class="vlt" id="shade">
+  <div class="wrap vlt-grid">
+    <div>
+      <span class="eyebrow rv">Shade preview</span>
+      <h2 class="rv">See the shade in KL sunlight.</h2>
+      <p class="rv">Drag to preview how much light each film lets through on a bright Kuala Lumpur afternoon. We confirm what is legal before we cut.</p>
+      <div class="vlt-ctrl rv">
+        <div class="vlt-readout"><b class="mono" id="vltNum">35%</b><span id="vltName">Balanced. Clear at night, calm in the sun.</span></div>
+        <input type="range" id="vlt" min="5" max="70" value="35" aria-label="Visible light transmission percentage">
+        <div class="vlt-scale mono"><span>5% limo</span><span>70% near clear</span></div>
+      </div>
+    </div>
+    <div class="vlt-stage rv" style="--d:.1s">
+      <video id="vltVideo" class="vlt-media" src="media/kl-window.mp4" poster="media/kl-window.jpg" muted loop playsinline autoplay preload="auto" aria-label="View of the Petronas Towers and Kuala Lumpur traffic through a car side window at midday"></video>
+      <div class="vlt-tint" id="vltTint"></div>
+    </div>
+  </div>
+</section>
+
+<section id="services">
+  <div class="wrap">
+    <div class="bento-head">
+      <h2 class="rv">Everything glass, and a little more.</h2>
+    </div>
+    <div class="bento">
+      <article class="cell img c-a rv">
+        <img src="https://picsum.photos/seed/halden-ceramic-film-sedan/1400/1000" alt="Sedan with fresh ceramic window film" loading="lazy">
+        <h3>Ceramic window film</h3>
+        <p>Blocks up to 98% of infrared heat without a mirror finish or signal interference. Our most requested install.</p>
+      </article>
+      <article class="cell c-b rv" style="--d:.06s">
+        <i class="ph ph-sun ico"></i>
+        <h3>Windshield strip</h3>
+        <p>A clean, level brow that cuts glare where it matters.</p>
+      </article>
+      <article class="cell c-c rv" style="--d:.1s">
+        <i class="ph ph-shield-check ico"></i>
+        <h3>Paint protection</h3>
+        <p>Self-healing film for the bonnet, mirrors and door edges.</p>
+      </article>
+      <article class="cell c-d rv">
+        <i class="ph ph-lightbulb ico"></i>
+        <h3>Smoked lamps</h3>
+        <p>Tail and indicator film, matched to the body and road legal.</p>
+      </article>
+      <article class="cell img c-e rv" style="--d:.06s">
+        <img src="https://picsum.photos/seed/halden-fleet-vans-lineup/1000/700" alt="Row of commercial vans with privacy glass" loading="lazy">
+        <h3>Fleet and commercial</h3>
+        <p>Privacy glass and heat control for vans, with volume pricing.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="tiers" id="films">
+  <div class="wrap">
+    <h2 class="rv">Pick a film. Keep it for life.</h2>
+    <div class="tier-grid">
+      <article class="tier feat rv">
+        <div>
+          <h3>IR Ceramic Pro</h3>
+          <p>Our best film. Rejects 98% of infrared, blocks 99.9% of UV, and holds colour for the life of the car.</p>
+        </div>
+        <div>
+          <div class="price">$1,150<small>full car</small></div>
+          <ul>
+            <li><i class="ph ph-check"></i>Lifetime warranty against fade and bubbling</li>
+            <li><i class="ph ph-check"></i>No signal or GPS interference</li>
+            <li><i class="ph ph-check"></i>Windshield film included</li>
+          </ul>
+        </div>
+      </article>
+      <article class="tier rv" style="--d:.06s">
+        <div>
+          <h3>Nano-Ceramic</h3>
+          <p>The sweet spot for daily drivers.</p>
+        </div>
+        <div class="price">$689<small>full car</small></div>
+      </article>
+      <article class="tier rv" style="--d:.1s">
+        <div>
+          <h3>Carbon</h3>
+          <p>Matte, true black, no fade. Good heat control on a budget.</p>
+        </div>
+        <div class="price">$349<small>full car</small></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap quote">
+    <div class="quote-img rv"><img src="https://picsum.photos/seed/halden-owner-portrait-garage/800/1000" alt="Customer standing beside their car in the studio" loading="lazy"></div>
+    <div class="rv" style="--d:.1s">
+      <blockquote>“Four years on my 911 and the film looks exactly like the day they fitted it.”</blockquote>
+      <div class="who"><b>Matteo Brandvold</b>Porsche 911 owner</div>
+    </div>
+  </div>
+</section>
+
+<section class="faq" id="faq">
+  <div class="wrap faq-grid">
+    <h2 class="rv">Before you ask.</h2>
+    <div class="rv" style="--d:.08s">
+      <details open><summary>Is it legal where I live?<i class="ph ph-plus"></i></summary><p>Limits differ by window and vehicle type. We check the current rules during the consult and will not cut a film that fails them.</p></details>
+      <details><summary>How long until I can use the windows?<i class="ph ph-plus"></i></summary><p>You can drive home the same day. Leave the windows up for three days so the film cures properly.</p></details>
+      <details><summary>What does the warranty cover?<i class="ph ph-plus"></i></summary><p>Fading, bubbling, peeling and discolouring for as long as you own the car. Damage from cleaning with abrasives is excluded.</p></details>
+      <details><summary>Will it affect my phone signal?<i class="ph ph-plus"></i></summary><p>Not with ceramic film. It contains no metal, so radio, GPS and toll tags work as normal.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="book" id="book">
+  <div class="wrap book-grid">
+    <div>
+      <span class="eyebrow rv">Book a fitting</span>
+      <h2 class="rv">Tell us the car. We will send a quote today.</h2>
+      <p class="rv">Most bookings are confirmed within two working hours.</p>
+    </div>
+    <form class="rv" id="bookForm" novalidate style="--d:.08s">
+      <label>Full name
+        <input name="name" autocomplete="name" required placeholder="Ines Marchetti">
+        <span class="err">Please enter your name.</span>
+      </label>
+      <label>Email
+        <input name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+        <span class="help">We only use this to send your quote.</span>
+        <span class="err">Please enter a valid email address.</span>
+      </label>
+      <div class="row">
+        <label>Vehicle
+          <input name="car" required placeholder="Model and year">
+          <span class="err">Tell us which car.</span>
+        </label>
+        <label>Film
+          <select name="film"><option>IR Ceramic Pro</option><option>Nano-Ceramic</option><option>Carbon</option><option>Not sure yet</option></select>
+        </label>
+      </div>
+      <button class="btn btn-primary magnet" type="submit">Book a fitting <i class="ph ph-arrow-up-right"></i></button>
+      <div class="done" role="status"><i class="ph ph-check-circle"></i>Thanks. We will be in touch within two working hours.</div>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a href="#top" class="logo" style="margin-bottom:14px"><span class="logo-mark" aria-hidden="true"></span>Halden Tint</a>
+        <p>Ceramic window film and paint protection, fitted by hand.</p>
+      </div>
+      <div><h4>Studio</h4><ul><li><a href="#shade">Shade preview</a></li><li><a href="#services">Services</a></li><li><a href="#films">Films</a></li></ul></div>
+      <div><h4>Contact</h4><ul><li><a href="mailto:studio@haldentint.example">studio@haldentint.example</a></li><li><a href="tel:+13125550184">+1 (312) 555-0184</a></li></ul></div>
+    </div>
+    <div class="legal">© 2026 Halden Tint Studio. All rights reserved.</div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Scroll reveal: hierarchy, content enters in reading order
+  const io = new IntersectionObserver((es) => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }), { threshold: .15, rootMargin: '0px 0px -6% 0px' });
+  document.querySelectorAll('.rv').forEach(el => reduce ? el.classList.add('in') : io.observe(el));
+
+  // Shade preview: feedback for the slider
+  const r = document.getElementById('vlt'), tint = document.getElementById('vltTint');
+  const num = document.getElementById('vltNum'), name = document.getElementById('vltName');
+  const label = v => v <= 15 ? 'Privacy. Very dark, limo style.' : v <= 30 ? 'Dark. Strong privacy and heat control.' : v <= 45 ? 'Balanced. Clear at night, calm in the sun.' : 'Light. Subtle, near factory look.';
+  const upd = () => {
+    const v = +r.value;
+    tint.style.opacity = ((100 - v) / 100 * 0.95).toFixed(2);
+    num.textContent = v + '%';
+    name.textContent = label(v);
+  };
+  r.addEventListener('input', upd); upd();
+  const kl = document.getElementById('vltVideo');
+  if (reduce) { kl.removeAttribute('autoplay'); kl.pause(); }
+  else new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? kl.play().catch(() => {}) : kl.pause()), { threshold: .1 }).observe(kl);
+
+  // Magnetic buttons: transform only, no React-style state, skipped for reduced motion
+  if (!reduce && matchMedia('(hover:hover)').matches) {
+    document.querySelectorAll('.magnet').forEach(b => {
+      b.addEventListener('pointermove', e => {
+        const k = b.getBoundingClientRect();
+        b.style.transform = `translate(${(e.clientX - k.left - k.width/2) * .18}px,${(e.clientY - k.top - k.height/2) * .25}px)`;
+      });
+      b.addEventListener('pointerleave', () => b.style.transform = '');
+    });
+  }
+
+
+  // One continuous film. Motivation: the three clips are one story (arrive, protect, install), so one scroll timeline drives all of it.
+  if (!reduce && window.gsap && window.ScrollTrigger) {
+    gsap.registerPlugin(ScrollTrigger);
+    const $ = id => document.getElementById(id);
+    const vids = { hero: document.querySelector('[data-scrub=hero]'), heat: document.querySelector('[data-scrub=heat]'), craft: document.querySelector('[data-scrub=craft]') };
+    const layers = { hero: $('lHero'), heat: $('lHeat'), craft: $('lCraft') };
+    const caps = document.querySelectorAll('.cap-stack > p');
+    const steps = document.querySelectorAll('#steps .step');
+    const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+    const rng = (p, a, b) => clamp((p - a) / (b - a));           // 0..1 inside [a,b]
+    const win = (p, a, b, c, d) => rng(p, a, b) * (1 - rng(p, c, d)); // fade in a-b, out c-d
+
+    // Segment map along the 0..1 scroll. Clip 1 and 2 overlap (end/start frames match), clip 2 to 3 dips through dark.
+    const seg = { hero: [0, .34], heat: [.32, .68], craft: [.70, 1] };
+    Object.values(vids).forEach(v => v.pause());
+
+    let target = 0, cur = 0, ready = 0;
+    const apply = p => {
+      for (const k in vids) {
+        const v = vids[k]; if (!v.duration) continue;
+        const [a, b] = seg[k];
+        const t = rng(p, a, b) * (v.duration - .05);
+        if (Math.abs(v.currentTime - t) > .012) v.currentTime = t;
+      }
+      vids.hero.style.opacity = p > .38 ? 0 : 1;
+      vids.heat.style.opacity = rng(p, .31, .37);
+      vids.craft.style.opacity = rng(p, .685, .735);
+      // heat fades out only on its way into craft (dip through dark)
+      if (p > .64) vids.heat.style.opacity = Math.min(rng(p, .31, .37), 1 - rng(p, .64, .69));
+
+      const o = { hero: 1 - rng(p, .06, .2), heat: win(p, .37, .43, .60, .66), craft: rng(p, .75, .81) };
+      for (const k in layers) {
+        const l = layers[k], v = o[k];
+        l.style.opacity = v;
+        l.style.transform = `translateY(${(k === 'hero' ? -(1 - v) : (1 - v)) * 22}px)`;
+        l.style.pointerEvents = v > .6 ? 'auto' : 'none';
+      }
+      const ci = p < .515 ? 0 : 1;
+      caps.forEach((c, n) => c.classList.toggle('on', n === ci));
+      const si = Math.min(3, Math.floor(rng(p, .77, .98) * 4));
+      steps.forEach((s2, n) => s2.classList.toggle('on', n === si));
+    };
+
+    // Smooth the playhead (ease toward the scroll position) so the footage glides instead of stepping.
+    ScrollTrigger.create({ trigger: '#film', start: 'top top', end: 'bottom bottom', onUpdate: s2 => { target = s2.progress; } });
+    gsap.ticker.add((_, dt) => {
+      const k = 1 - Math.pow(1 - .14, dt / 16.67);
+      if (Math.abs(target - cur) > 1e-4) cur += (target - cur) * k; else cur = target;
+      apply(cur);
+    });
+    Object.values(vids).forEach(v => v.addEventListener('loadedmetadata', () => apply(cur), { once: true }));
+  } else {
+    document.querySelectorAll('video.vid').forEach(v => v.removeAttribute('preload'));
+  }
+
+  // Form validation with inline errors
+  const f = document.getElementById('bookForm');
+  f.addEventListener('submit', e => {
+    e.preventDefault();
+    let ok = true;
+    f.querySelectorAll('input[required]').forEach(i => {
+      const bad = !i.value.trim() || (i.type === 'email' && !/^\S+@\S+\.\S+$/.test(i.value));
+      i.closest('label').classList.toggle('invalid', bad);
+      if (bad) ok = false;
+    });
+    if (ok) f.classList.add('sent');
+  });
+})();
+</script>
+</body>
+</html>
