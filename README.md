@@ -2,6 +2,8 @@
 
 A passion-project landing page for a fictional window-tint and paint-protection studio. The whole page behaves like one continuous film: scroll and the car moves, the heat drains out, and a shade slider runs over real sunlight footage from Kuala Lumpur.
 
+**Live site:** https://albertusalexander.github.io/halden-tint/
+
 > Halden Tint is a made-up business. The email and phone number in the footer are placeholders, and the booking form is front-end only (it validates input and shows a thank-you message; nothing is sent or stored).
 
 ## Stack
